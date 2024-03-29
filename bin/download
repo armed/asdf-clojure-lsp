@@ -10,14 +10,41 @@ source "${plugin_dir}/lib/utils.bash"
 
 mkdir -p "$ASDF_DOWNLOAD_PATH"
 
-# TODO: Adapt this to proper extension and adapt extracting strategy.
-release_file="$ASDF_DOWNLOAD_PATH/$TOOL_NAME-$ASDF_INSTALL_VERSION.tar.gz"
+os=$(uname -s)
+arch=$(uname -m)
+
+if [ "$os" = "Linux" ]; then
+	if [ "$arch" = "aarch64" ]; then
+		arch_suffix="native-linux-aarch64"
+	else
+		arch_suffix="native-linux-amd64"
+	fi
+elif [ "$os" = "Darwin" ]; then
+	if [ "$arch" = "arm64" ]; then
+		arch_suffix="native-macos-aarch64"
+	else
+		arch_suffix="native-macos-amd64"
+	fi
+else
+	echo "Unsupported operating system: $OS"
+	exit 1
+fi
+
+echo "OS ${os}"
+echo "ARCH ${arch_suffix}"
+echo "VERSION ${ASDF_INSTALL_VERSION}"
+
+file_name="$TOOL_NAME-$arch_suffix.zip"
+release_file="$ASDF_DOWNLOAD_PATH/${file_name}"
+
+echo "RELEASE FILE ${release_file}"
+echo "FILE_NAME ${file_name}"
 
 # Download tar.gz file to the download directory
-download_release "$ASDF_INSTALL_VERSION" "$release_file"
+download_release "$ASDF_INSTALL_VERSION" "$file_name"
 
 #  Extract contents of tar.gz file into the download directory
-tar -xzf "$release_file" -C "$ASDF_DOWNLOAD_PATH" --strip-components=1 || fail "Could not extract $release_file"
+unzip -q "$release_file" -d "$ASDF_DOWNLOAD_PATH" || fail "Could not extract $release_file"
 
 # Remove the tar.gz file since we don't need to keep it
 rm "$release_file"
