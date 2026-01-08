@@ -3,6 +3,7 @@
 set -euo pipefail
 
 GH_REPO="https://github.com/clojure-lsp/clojure-lsp"
+GH_DEV_REPO="https://github.com/clojure-lsp/clojure-lsp-dev-builds"
 TOOL_NAME="clojure-lsp"
 TOOL_TEST="clojure-lsp --version"
 
@@ -32,12 +33,25 @@ list_all_versions() {
 	list_github_tags
 }
 
+get_latest_nightly() {
+	curl "${curl_opts[@]}" "https://api.github.com/repos/clojure-lsp/clojure-lsp-dev-builds/releases/latest" |
+		grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4
+}
+
 download_release() {
-	local version filename url
+	local version filename url repo
 	version="$1"
 	filename="$2"
 
-	url="$GH_REPO/releases/download/${version}/${filename}"
+	if [ "$version" = "nightly" ]; then
+		version=$(get_latest_nightly)
+		repo="$GH_DEV_REPO"
+		echo "* Resolved nightly to $version"
+	else
+		repo="$GH_REPO"
+	fi
+
+	url="$repo/releases/download/${version}/${filename}"
 
 	echo "* Downloading $TOOL_NAME release $version..."
 
